@@ -9,8 +9,8 @@ from fastapi.responses import JSONResponse
 
 from app.common.exceptions import AppException
 from app.common.responses import ErrorResponse
-from app.infrastructure.database.base import Base
-from app.infrastructure.database.session import SessionLocal, engine
+from app.infrastructure.database.migrate import run_migrations
+from app.infrastructure.database.session import SessionLocal
 from app.modules.branches.entity import Branch
 from app.modules.branches.routes import router as branches_router
 from app.modules.rooms.entity import Room
@@ -22,7 +22,7 @@ app = FastAPI(title="Banana Reservations API")
 
 @app.on_event("startup")
 def startup():
-    Base.metadata.create_all(bind=engine)
+    run_migrations()
     seed_initial_data()
 
 

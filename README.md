@@ -2,12 +2,37 @@
 
 Reservations microservice — FastAPI.
 
+## Routes
+
+- **GET /health** — Health check
+- **GET /branches** — List branches
+- **GET /branches/{branch_id}** — Get one branch
+- **POST /branches** — Create a branch
+- **DELETE /branches/{branch_id}** — Delete a branch
+- **GET /rooms** — List rooms
+- **GET /rooms/{room_id}** — Get one room
+- **POST /rooms** — Create a room
+- **DELETE /rooms/{room_id}** — Delete a room
+- **GET /reservations** — List reservations
+- **GET /reservations/{reservation_id}** — Get one reservation
+- **POST /reservations** — Create a reservation
+- **PUT /reservations/{reservation_id}** — Update a reservation
+- **DELETE /reservations/{reservation_id}** — Delete a reservation
+
+All business routes require `Authorization: Bearer <token>`.
+
 ## Environment Variables
 
 | Variable | Description |
 |---|---|
 | `DATABASE_URL` | PostgreSQL connection string |
 | `JWT_SECRET` | Secret key for validating JWT tokens |
+
+## Database
+
+The service uses SQLAlchemy with PostgreSQL.
+
+Schema changes are managed with Alembic migrations and applied automatically on startup.
 
 ## Recommended: Run with Docker
 
@@ -31,7 +56,6 @@ This starts:
 Requires:
 
 - PostgreSQL installed locally
-- Reservations database created manually
 - Environment variables configured manually
 
 ```bash
