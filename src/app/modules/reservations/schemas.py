@@ -43,5 +43,6 @@ class ReservationResponse(ReservationBase):
     branch_name: str
     room_name: str
     created_at: datetime
+    updated_at: datetime
 
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)

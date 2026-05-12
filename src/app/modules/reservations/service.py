@@ -93,4 +93,5 @@ class ReservationService:
             people_quantity=reservation.people_quantity,
             description=reservation.description,
             created_at=reservation.created_at,
+            updated_at=reservation.updated_at,
         )

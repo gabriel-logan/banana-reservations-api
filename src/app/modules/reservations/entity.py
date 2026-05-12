@@ -15,5 +15,11 @@ class Reservation(Base):
     people_quantity = Column(Integer, nullable=True)
     description = Column(Text, nullable=True)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime,
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
 
     room = relationship("Room")

@@ -18,38 +18,105 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.create_table(
-        "branches",
-        sa.Column("id", sa.Integer(), primary_key=True, nullable=False),
-        sa.Column("name", sa.String(length=255), nullable=False),
-        sa.Column("created_at", sa.DateTime(), server_default=sa.func.now(), nullable=False),
+    op.execute(
+        """
+        CREATE TABLE IF NOT EXISTS branches (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+        );
+        """
     )
-    op.create_index("ix_branches_id", "branches", ["id"], unique=False)
+    op.execute(
+        """
+        ALTER TABLE branches
+        ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP NULL;
+        """
+    )
+    op.execute(
+        """
+        UPDATE branches
+        SET updated_at = COALESCE(updated_at, created_at, NOW())
+        WHERE updated_at IS NULL;
+        """
+    )
+    op.execute(
+        """
+        ALTER TABLE branches
+        ALTER COLUMN updated_at SET NOT NULL;
+        """
+    )
+    op.execute("CREATE INDEX IF NOT EXISTS ix_branches_id ON branches (id);")
 
-    op.create_table(
-        "rooms",
-        sa.Column("id", sa.Integer(), primary_key=True, nullable=False),
-        sa.Column("name", sa.String(length=255), nullable=False),
-        sa.Column("branch_id", sa.Integer(), nullable=False),
-        sa.Column("created_at", sa.DateTime(), server_default=sa.func.now(), nullable=False),
-        sa.ForeignKeyConstraint(["branch_id"], ["branches.id"]),
+    op.execute(
+        """
+        CREATE TABLE IF NOT EXISTS rooms (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            branch_id INTEGER NOT NULL REFERENCES branches(id),
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+        );
+        """
     )
-    op.create_index("ix_rooms_id", "rooms", ["id"], unique=False)
+    op.execute(
+        """
+        ALTER TABLE rooms
+        ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP NULL;
+        """
+    )
+    op.execute(
+        """
+        UPDATE rooms
+        SET updated_at = COALESCE(updated_at, created_at, NOW())
+        WHERE updated_at IS NULL;
+        """
+    )
+    op.execute(
+        """
+        ALTER TABLE rooms
+        ALTER COLUMN updated_at SET NOT NULL;
+        """
+    )
+    op.execute("CREATE INDEX IF NOT EXISTS ix_rooms_id ON rooms (id);")
 
-    op.create_table(
-        "reservations",
-        sa.Column("id", sa.Integer(), primary_key=True, nullable=False),
-        sa.Column("room_id", sa.Integer(), nullable=False),
-        sa.Column("start_time", sa.DateTime(), nullable=False),
-        sa.Column("end_time", sa.DateTime(), nullable=False),
-        sa.Column("responsible", sa.String(length=255), nullable=False),
-        sa.Column("coffee", sa.Boolean(), nullable=False, server_default=sa.false()),
-        sa.Column("people_quantity", sa.Integer(), nullable=True),
-        sa.Column("description", sa.Text(), nullable=True),
-        sa.Column("created_at", sa.DateTime(), server_default=sa.func.now(), nullable=False),
-        sa.ForeignKeyConstraint(["room_id"], ["rooms.id"]),
+    op.execute(
+        """
+        CREATE TABLE IF NOT EXISTS reservations (
+            id SERIAL PRIMARY KEY,
+            room_id INTEGER NOT NULL REFERENCES rooms(id),
+            start_time TIMESTAMP NOT NULL,
+            end_time TIMESTAMP NOT NULL,
+            responsible VARCHAR(255) NOT NULL,
+            coffee BOOLEAN NOT NULL DEFAULT FALSE,
+            people_quantity INTEGER NULL,
+            description TEXT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+        );
+        """
     )
-    op.create_index("ix_reservations_id", "reservations", ["id"], unique=False)
+    op.execute(
+        """
+        ALTER TABLE reservations
+        ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP NULL;
+        """
+    )
+    op.execute(
+        """
+        UPDATE reservations
+        SET updated_at = COALESCE(updated_at, created_at, NOW())
+        WHERE updated_at IS NULL;
+        """
+    )
+    op.execute(
+        """
+        ALTER TABLE reservations
+        ALTER COLUMN updated_at SET NOT NULL;
+        """
+    )
+    op.execute("CREATE INDEX IF NOT EXISTS ix_reservations_id ON reservations (id);")
 
 
 def downgrade() -> None:
