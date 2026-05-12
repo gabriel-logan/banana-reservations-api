@@ -7,7 +7,30 @@ from app.core.config import settings
 
 
 def run_migrations() -> None:
-    project_root = Path(__file__).resolve().parents[4]
-    config = Config(str(project_root / "alembic.ini"))
+    alembic_ini = _find_alembic_ini()
+    config = Config(str(alembic_ini))
+    config.set_main_option("script_location", str(_find_alembic_script_location()))
     config.set_main_option("sqlalchemy.url", settings.database_url)
     command.upgrade(config, "head")
+
+
+def _find_alembic_ini() -> Path:
+    current_file = Path(__file__).resolve()
+
+    for parent in current_file.parents:
+        candidate = parent / "alembic.ini"
+        if candidate.exists():
+            return candidate
+
+    raise FileNotFoundError("alembic.ini not found.")
+
+
+def _find_alembic_script_location() -> Path:
+    current_file = Path(__file__).resolve()
+
+    for parent in current_file.parents:
+        candidate = parent / "alembic"
+        if candidate.exists():
+            return candidate
+
+    raise FileNotFoundError("Alembic script location not found.")
