@@ -16,6 +16,6 @@ app.include_router(rooms_router)
 app.include_router(reservations_router)
 
 
-@app.get("/")
+@app.get("/health")
 def health():
     return {"status": "ok"}
