@@ -68,7 +68,7 @@ def health():
 def seed_initial_data():
     db = SessionLocal()
     try:
-        if db.query(Branch).count() > 0:
+        if db.query(Branch.id).count() > 0:
             return
 
         matriz = Branch(name="Matriz")
