@@ -9,14 +9,27 @@ Reservations microservice — FastAPI.
 | `DATABASE_URL` | PostgreSQL connection string |
 | `JWT_SECRET` | Secret key for validating JWT tokens |
 
-## Run locally
-
-```bash
-uvicorn app.main:app --reload
-```
-
-## Run with Docker
+## Recommended: Run with Docker
 
 ```bash
 docker compose up --build
+```
+
+This starts:
+
+- **reservations-api** — FastAPI on port 8000
+- **postgres-reservations** — PostgreSQL database
+
+## Manual setup
+
+*Not recommended.*
+
+Requires:
+
+- PostgreSQL installed locally
+- Reservations database created manually
+- Environment variables configured manually
+
+```bash
+uvicorn app.main:app --reload --app-dir src
 ```
