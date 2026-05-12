@@ -1,4 +1,4 @@
-from app.common.exceptions import NotFoundException
+from app.common.exceptions import ConflictException, NotFoundException
 from app.modules.branches.repository import BranchRepository
 from app.modules.rooms.repository import RoomRepository
 from app.modules.rooms.schemas import RoomCreate, RoomResponse
@@ -28,4 +28,6 @@ class RoomService:
         room = self.repo.get_by_id(room_id)
         if room is None:
             raise NotFoundException("Room not found.")
+        if self.repo.has_reservations(room_id):
+            raise ConflictException("Cannot delete room with reservations linked to it.")
         self.repo.delete(room_id)

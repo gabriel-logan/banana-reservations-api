@@ -1,3 +1,4 @@
+from app.modules.rooms.entity import Room
 from sqlalchemy.orm import Session
 from app.modules.branches.entity import Branch
 from app.modules.branches.schemas import BranchCreate
@@ -19,6 +20,9 @@ class BranchRepository:
         self.db.commit()
         self.db.refresh(branch)
         return branch
+
+    def has_rooms(self, branch_id: int) -> bool:
+        return self.db.query(Room.id).filter(Room.branch_id == branch_id).first() is not None
 
     def delete(self, branch_id: int) -> None:
         branch = self.get_by_id(branch_id)

@@ -1,3 +1,4 @@
+from app.modules.reservations.entity import Reservation
 from sqlalchemy.orm import Session
 from app.modules.rooms.entity import Room
 from app.modules.rooms.schemas import RoomCreate
@@ -22,6 +23,9 @@ class RoomRepository:
         self.db.commit()
         self.db.refresh(room)
         return room
+
+    def has_reservations(self, room_id: int) -> bool:
+        return self.db.query(Reservation.id).filter(Reservation.room_id == room_id).first() is not None
 
     def delete(self, room_id: int) -> None:
         room = self.get_by_id(room_id)

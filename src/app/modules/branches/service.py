@@ -1,4 +1,4 @@
-from app.common.exceptions import NotFoundException
+from app.common.exceptions import ConflictException, NotFoundException
 from app.modules.branches.repository import BranchRepository
 from app.modules.branches.schemas import BranchCreate, BranchResponse
 
@@ -23,4 +23,6 @@ class BranchService:
         branch = self.repo.get_by_id(branch_id)
         if branch is None:
             raise NotFoundException("Branch not found.")
+        if self.repo.has_rooms(branch_id):
+            raise ConflictException("Cannot delete branch with rooms linked to it.")
         self.repo.delete(branch_id)
