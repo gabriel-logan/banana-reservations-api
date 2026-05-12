@@ -13,6 +13,10 @@ Reservations microservice — FastAPI.
 
 ```bash
 docker compose up --build
+
+# or
+
+docker-compose up --build
 ```
 
 This starts:
