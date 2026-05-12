@@ -1,3 +1,4 @@
+from app.common.exceptions import NotFoundException
 from app.modules.branches.repository import BranchRepository
 from app.modules.branches.schemas import BranchCreate, BranchResponse
 
@@ -7,13 +8,19 @@ class BranchService:
         self.repo = repo
 
     def list_branches(self) -> list[BranchResponse]:
-        raise NotImplementedError
+        return [BranchResponse.model_validate(branch) for branch in self.repo.get_all()]
 
     def get_branch(self, branch_id: int) -> BranchResponse:
-        raise NotImplementedError
+        branch = self.repo.get_by_id(branch_id)
+        if branch is None:
+            raise NotFoundException("Branch not found.")
+        return BranchResponse.model_validate(branch)
 
     def create_branch(self, data: BranchCreate) -> BranchResponse:
-        raise NotImplementedError
+        return BranchResponse.model_validate(self.repo.create(data))
 
     def delete_branch(self, branch_id: int) -> None:
-        raise NotImplementedError
+        branch = self.repo.get_by_id(branch_id)
+        if branch is None:
+            raise NotFoundException("Branch not found.")
+        self.repo.delete(branch_id)

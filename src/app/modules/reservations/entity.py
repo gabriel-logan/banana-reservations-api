@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, func
+from sqlalchemy.orm import relationship
 from app.infrastructure.database.base import Base
 
 
@@ -14,3 +15,5 @@ class Reservation(Base):
     people_quantity = Column(Integer, nullable=True)
     description = Column(Text, nullable=True)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
+
+    room = relationship("Room")
