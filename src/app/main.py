@@ -6,9 +6,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.common.exceptions import AppException
 from app.common.responses import ErrorResponse
+from app.core.config import settings
 from app.infrastructure.database.migrate import run_migrations
 from app.infrastructure.database.session import SessionLocal
 from app.modules.branches.entity import Branch
@@ -18,6 +20,28 @@ from app.modules.rooms.routes import router as rooms_router
 from app.modules.reservations.routes import router as reservations_router
 
 app = FastAPI(title="Banana Reservations API")
+allowed_domains = [
+    domain.strip()
+    for domain in settings.allowed_domains.split(",")
+    if domain.strip()
+]
+
+if settings.allowed_domains.strip() == "*" or not allowed_domains:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=allowed_domains,
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 
 @app.on_event("startup")

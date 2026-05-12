@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./banana_reservations.db"
     jwt_secret: str = "super-secret"
     jwt_algorithm: str = "HS256"
+    allowed_domains: str = "*"
 
     model_config = {"env_file": ".env"}
 
