@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
@@ -16,10 +18,13 @@ def get_branch_service(db: Session = Depends(get_db)) -> BranchService:
 
 @router.get("", response_model=list[BranchResponse], response_model_by_alias=True)
 def list_branches(
+    start_time: datetime | None = None,
+    end_time: datetime | None = None,
+    ignore_reservation_id: int | None = None,
     service: BranchService = Depends(get_branch_service),
     _=Depends(get_current_user),
 ):
-    return service.list_branches()
+    return service.list_branches(start_time, end_time, ignore_reservation_id)
 
 
 @router.get("/{branch_id}", response_model=BranchResponse, response_model_by_alias=True)

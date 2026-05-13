@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     jwt_secret: str = "super-secret"
     jwt_algorithm: str = "HS256"
     allowed_domains: str = "*"
+    log_level: str = "DEBUG"
 
     model_config = {"env_file": ".env"}
 

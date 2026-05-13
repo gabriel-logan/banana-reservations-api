@@ -1,3 +1,5 @@
+import logging
+
 from app.modules.reservations.entity import Reservation
 from app.common.exceptions import ConflictException, NotFoundException
 from app.modules.branches.repository import BranchRepository
@@ -9,6 +11,8 @@ from app.modules.reservations.schemas import (
     ReservationUpdate,
 )
 from app.modules.rooms.repository import RoomRepository
+
+logger = logging.getLogger(__name__)
 
 
 class ReservationService:
@@ -23,26 +27,61 @@ class ReservationService:
         self.branch_repo = branch_repo
 
     def list_reservations(self, room_id: int | None = None) -> list[ReservationResponse]:
-        return [self._to_response(reservation) for reservation in self.repo.get_all(room_id)]
+        reservations = self.repo.get_all(room_id)
+        logger.info(
+            "Listed reservations with room_id=%s. count=%s",
+            room_id,
+            len(reservations),
+        )
+        return [self._to_response(reservation) for reservation in reservations]
 
     def get_reservation(self, reservation_id: int) -> ReservationResponse:
+        logger.debug("Fetching reservation id=%s", reservation_id)
         reservation = self.repo.get_by_id(reservation_id)
         if reservation is None:
+            logger.warning("Reservation id=%s not found.", reservation_id)
             raise NotFoundException("Reservation not found.")
         return self._to_response(reservation)
 
     def create_reservation(self, data: ReservationCreate) -> ReservationResponse:
+        logger.info(
+            "Creating reservation with branch_id=%s room_id=%s start=%s end=%s coffee=%s people_quantity=%s",
+            data.branch_id,
+            data.room_id,
+            data.start_time.isoformat(),
+            data.end_time.isoformat(),
+            data.coffee,
+            data.people_quantity,
+        )
         room = self._validate_room_and_branch(data.branch_id, data.room_id)
         if self.repo.has_conflict(room.id, data.start_time, data.end_time):
+            logger.warning(
+                "Reservation conflict detected on create for room_id=%s between %s and %s.",
+                room.id,
+                data.start_time.isoformat(),
+                data.end_time.isoformat(),
+            )
             raise ConflictException(
                 "There is already a reservation for this room in the selected time range."
             )
         reservation = self.repo.create(data)
+        logger.info("Reservation created successfully. id=%s", reservation.id)
         return self._to_response(reservation)
 
     def update_reservation(self, reservation_id: int, data: ReservationUpdate) -> ReservationResponse:
+        logger.info(
+            "Updating reservation id=%s with branch_id=%s room_id=%s start=%s end=%s coffee=%s people_quantity=%s",
+            reservation_id,
+            data.branch_id,
+            data.room_id,
+            data.start_time.isoformat(),
+            data.end_time.isoformat(),
+            data.coffee,
+            data.people_quantity,
+        )
         reservation = self.repo.get_by_id(reservation_id)
         if reservation is None:
+            logger.warning("Reservation id=%s not found for update.", reservation_id)
             raise NotFoundException("Reservation not found.")
 
         room = self._validate_room_and_branch(data.branch_id, data.room_id)
@@ -52,23 +91,39 @@ class ReservationService:
             data.end_time,
             ignore_reservation_id=reservation_id,
         ):
+            logger.warning(
+                "Reservation conflict detected on update for reservation_id=%s room_id=%s between %s and %s.",
+                reservation_id,
+                room.id,
+                data.start_time.isoformat(),
+                data.end_time.isoformat(),
+            )
             raise ConflictException(
                 "There is already a reservation for this room in the selected time range."
             )
 
         updated_reservation = self.repo.update(reservation, data)
+        logger.info("Reservation updated successfully. id=%s", updated_reservation.id)
         return self._to_response(updated_reservation)
 
     def delete_reservation(self, reservation_id: int) -> None:
+        logger.info("Deleting reservation id=%s", reservation_id)
         reservation = self.repo.get_by_id(reservation_id)
         if reservation is None:
+            logger.warning("Reservation id=%s not found for delete.", reservation_id)
             raise NotFoundException("Reservation not found.")
         self.repo.delete(reservation_id)
 
     def delete_reservations(self, data: ReservationBulkDeleteRequest) -> None:
+        logger.info("Bulk deleting reservations ids=%s", data.reservation_ids)
         reservations = self.repo.get_by_ids(data.reservation_ids)
 
         if len(reservations) != len(data.reservation_ids):
+            logger.warning(
+                "Bulk delete failed because some reservations were not found. requested_ids=%s found=%s",
+                data.reservation_ids,
+                len(reservations),
+            )
             raise NotFoundException("One or more reservations were not found.")
 
         self.repo.delete_many(reservations)
@@ -76,13 +131,20 @@ class ReservationService:
     def _validate_room_and_branch(self, branch_id: int, room_id: int):
         branch = self.branch_repo.get_by_id(branch_id)
         if branch is None:
+            logger.warning("Branch id=%s not found while validating reservation.", branch_id)
             raise NotFoundException("Branch not found.")
 
         room = self.room_repo.get_by_id(room_id)
         if room is None:
+            logger.warning("Room id=%s not found while validating reservation.", room_id)
             raise NotFoundException("Room not found.")
 
         if room.branch_id != branch_id:
+            logger.warning(
+                "Room id=%s does not belong to branch_id=%s.",
+                room_id,
+                branch_id,
+            )
             raise ConflictException("Selected room does not belong to the selected branch.")
 
         return room

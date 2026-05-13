@@ -14,12 +14,16 @@ from app.common.exceptions import AppException
 from app.common.responses import ErrorResponse
 from app.core.config import settings
 from app.infrastructure.database.migrate import run_migrations
+from app.infrastructure.database.seeder import seed_initial_data
 from app.infrastructure.database.session import SessionLocal
-from app.modules.branches.entity import Branch
 from app.modules.branches.routes import router as branches_router
-from app.modules.rooms.entity import Room
 from app.modules.rooms.routes import router as rooms_router
 from app.modules.reservations.routes import router as reservations_router
+
+logging.basicConfig(
+    level=getattr(logging, settings.log_level.upper(), logging.DEBUG),
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+)
 
 app = FastAPI(title="Banana Reservations API")
 logger = logging.getLogger(__name__)
@@ -50,8 +54,15 @@ else:
 @app.on_event("startup")
 def startup():
     try:
+        logger.info("Starting Banana Reservations API.")
+        logger.debug("Running database migrations.")
         run_migrations()
-        seed_initial_data()
+        logger.debug("Database migrations finished.")
+
+        with SessionLocal() as db:
+            seed_initial_data(db)
+
+        logger.info("Banana Reservations API startup completed.")
     except Exception as exc:
         print("Reservations API startup failed:", repr(exc), file=sys.stderr, flush=True)
         traceback.print_exc()
@@ -96,26 +107,3 @@ app.include_router(reservations_router)
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
-
-def seed_initial_data():
-    db = SessionLocal()
-    try:
-        if db.query(Branch.id).count() > 0:
-            return
-
-        matriz = Branch(name="Matriz")
-        paulista = Branch(name="Paulista")
-        db.add_all([matriz, paulista])
-        db.flush()
-
-        db.add_all(
-            [
-                Room(name="Sala Sol", branch_id=matriz.id),
-                Room(name="Sala Lua", branch_id=matriz.id),
-                Room(name="Sala Oceano", branch_id=paulista.id),
-            ]
-        )
-        db.commit()
-    finally:
-        db.close()

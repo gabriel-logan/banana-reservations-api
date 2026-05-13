@@ -1,63 +1,111 @@
 # banana-reservations-api
 
-Reservations microservice — FastAPI.
+Reservations microservice for Banana Meeting Rooms.
 
-## Routes
+## Responsibility
 
-- **GET /health** — Health check
-- **GET /branches** — List branches
-- **GET /branches/{branch_id}** — Get one branch
-- **POST /branches** — Create a branch. Body: `{ name }`
-- **DELETE /branches/{branch_id}** — Delete a branch
-- **GET /rooms** — List rooms. Query: `{ branch_id? }`
-- **GET /rooms/{room_id}** — Get one room
-- **POST /rooms** — Create a room. Body: `{ name, branch_id }`
-- **DELETE /rooms/{room_id}** — Delete a room
-- **GET /reservations** — List reservations. Query: `{ room_id? }`
-- **GET /reservations/{reservation_id}** — Get one reservation
-- **POST /reservations** — Create a reservation. Body: `{ branch_id, room_id, start_time, end_time, responsible, coffee, people_quantity?, description? }`
-- **PUT /reservations/{reservation_id}** — Update a reservation. Body: `{ branch_id, room_id, start_time, end_time, responsible, coffee, people_quantity?, description? }`
-- **DELETE /reservations/{reservation_id}** — Delete a reservation
+- Manage branches
+- Manage rooms
+- Manage reservations
+- Validate reservation conflicts
+- Validate JWT tokens issued by `banana-auth-api`
 
-All business routes require `Authorization: Bearer <token>`.
+## Tech Choices
+
+- **FastAPI** for a lightweight REST API
+- **SQLAlchemy** for relational persistence
+- **Alembic** for migrations
+- **PostgreSQL** as the service database
+- **Shared JWT secret** to validate tokens from the auth service
+
+## Requirements
+
+- Docker
+- Docker Compose
 
 ## Environment Variables
 
+Copy `.env.example` to `.env` and adjust only if needed.
+
 | Variable | Description |
 |---|---|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `JWT_SECRET` | Secret key for validating JWT tokens |
+| `DATABASE_URL` | PostgreSQL connection string used by the API container |
+| `JWT_SECRET` | Secret used to validate JWT tokens. It must be exactly the same value used by `banana-auth-api` |
+| `ALLOWED_DOMAINS` | Allowed frontend origins separated by comma, or `*` in development |
+| `LOG_LEVEL` | Logger level for the API, for example `DEBUG` or `INFO` |
 
-## Database
+Generate a strong shared secret with:
 
-The service uses SQLAlchemy with PostgreSQL.
+```bash
+openssl rand -base64 32
+```
 
-Schema changes are managed with Alembic migrations and applied automatically on startup.
-
-## Recommended: Run with Docker
+## Run
 
 ```bash
 docker compose up --build
-
-# or
-
-docker-compose up --build
 ```
 
-This starts:
+The API will be available at `http://localhost:8000`.
 
-- **reservations-api** — FastAPI on port 8000
-- **postgres-reservations** — PostgreSQL database
+## Database, Migrations and Seeds
 
-## Manual setup
+- Migrations are applied automatically on startup
+- Initial branches, rooms and reservations are seeded automatically on an empty database
+- Seed data includes happy-path availability and reservation conflict scenarios
 
-*Not recommended.*
-
-Requires:
-
-- PostgreSQL installed locally
-- Environment variables configured manually
+If you want to recreate the database, migrations and seeds from scratch:
 
 ```bash
-uvicorn app.main:app --reload --app-dir src
+docker compose down -v
+docker compose up --build
 ```
+
+## Routes
+
+- `GET /health`
+
+- `GET /branches`
+  Query: `{ start_time?, end_time?, ignore_reservation_id? }`
+
+- `GET /branches/{branch_id}`
+  Path: `{ branch_id }`
+
+- `POST /branches`
+  Body: `{ name }`
+
+- `DELETE /branches/{branch_id}`
+  Path: `{ branch_id }`
+
+- `GET /rooms`
+  Query: `{ branch_id?, start_time?, end_time?, ignore_reservation_id? }`
+
+- `GET /rooms/{room_id}`
+  Path: `{ room_id }`
+
+- `POST /rooms`
+  Body: `{ name, branch_id }`
+
+- `DELETE /rooms/{room_id}`
+  Path: `{ room_id }`
+
+- `GET /reservations`
+  Query: `{ room_id? }`
+
+- `GET /reservations/{reservation_id}`
+  Path: `{ reservation_id }`
+
+- `POST /reservations`
+  Body: `{ branch_id, room_id, start_time, end_time, responsible, coffee, people_quantity?, description? }`
+
+- `PUT /reservations/{reservation_id}`
+  Path: `{ reservation_id }`
+  Body: `{ branch_id, room_id, start_time, end_time, responsible, coffee, people_quantity?, description? }`
+
+- `DELETE /reservations/{reservation_id}`
+  Path: `{ reservation_id }`
+
+- `POST /reservations/bulk-delete`
+  Body: `{ reservation_ids }`
+
+All business routes require `Authorization: Bearer <token>`.

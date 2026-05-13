@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
@@ -18,10 +20,18 @@ def get_room_service(db: Session = Depends(get_db)) -> RoomService:
 @router.get("", response_model=list[RoomResponse], response_model_by_alias=True)
 def list_rooms(
     branch_id: int | None = None,
+    start_time: datetime | None = None,
+    end_time: datetime | None = None,
+    ignore_reservation_id: int | None = None,
     service: RoomService = Depends(get_room_service),
     _=Depends(get_current_user),
 ):
-    return service.list_rooms(branch_id)
+    return service.list_rooms(
+        branch_id,
+        start_time,
+        end_time,
+        ignore_reservation_id,
+    )
 
 
 @router.get("/{room_id}", response_model=RoomResponse, response_model_by_alias=True)
