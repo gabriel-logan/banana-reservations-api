@@ -12,11 +12,11 @@ Reservations microservice for Banana Meeting Rooms.
 
 ## Tech Choices
 
-- **FastAPI** for a lightweight REST API
-- **SQLAlchemy** for relational persistence
-- **Alembic** for migrations
-- **PostgreSQL** as the service database
-- **Shared JWT secret** to validate tokens from the auth service
+- **FastAPI** because the challenge allows Python frameworks and FastAPI gives a very good balance between speed of implementation, readability and built-in validation. I chose it over Flask because Flask would require more manual structuring for request validation and API contracts, and over Django because Django would be heavier than necessary for a focused microservice.
+- **SQLAlchemy** because the project needs a relational ORM with explicit models and predictable queries. I chose it over smaller ORMs because SQLAlchemy is more established, flexible and easier to scale in complexity if business rules around reservations grow. It also keeps the repository layer explicit instead of hiding too much behind framework conventions.
+- **Alembic** because schema evolution needs to be versioned and repeatable. I chose it over relying only on automatic table creation because migrations document database changes clearly and make the service more reliable to run in different environments.
+- **PostgreSQL** because reservation data has relational constraints and conflict rules that fit well in a relational database. I chose it over SQLite because this project benefits from a database engine closer to real-world concurrency and deployment scenarios, while still being lightweight enough for local Docker usage.
+- **Shared JWT secret validation** because this microservice only needs to verify tokens issued by the auth service, not manage user credentials directly. I chose this approach over calling the auth API on every request because local JWT validation keeps the reservations service independent, faster and better aligned with the proposed microservice architecture.
 
 ## Requirements
 
@@ -62,6 +62,14 @@ If you want to recreate the database, migrations and seeds from scratch:
 docker compose down -v
 docker compose up --build
 ```
+
+## How This API Works
+
+This service receives all business requests related to branches, rooms and reservations. Every business route is protected, so the frontend must send a JWT in the `Authorization` header. Before processing the request, the API validates that token locally using the shared `JWT_SECRET` and extracts the authenticated user identity from the token payload.
+
+Once the user is identified, the API executes the requested operation in its own PostgreSQL database. Listing routes return branches, rooms or reservations, and reservation queries are scoped by authenticated user where applicable. Create and update operations also validate business rules such as branch existence, room existence, room-to-branch consistency and time range validity.
+
+The most important rule in this service is conflict detection. Before creating or updating a reservation, the API checks whether another reservation already exists for the same room in an overlapping time interval. If so, the request is rejected with a conflict response. This keeps the final scheduling guarantee in the backend even if the frontend already filtered available options earlier.
 
 ## Routes
 
