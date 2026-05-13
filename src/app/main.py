@@ -1,5 +1,7 @@
+import logging
 import os
 import sys
+import traceback
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -20,6 +22,7 @@ from app.modules.rooms.routes import router as rooms_router
 from app.modules.reservations.routes import router as reservations_router
 
 app = FastAPI(title="Banana Reservations API")
+logger = logging.getLogger(__name__)
 allowed_domains = [
     domain.strip()
     for domain in settings.allowed_domains.split(",")
@@ -46,8 +49,14 @@ else:
 
 @app.on_event("startup")
 def startup():
-    run_migrations()
-    seed_initial_data()
+    try:
+        run_migrations()
+        seed_initial_data()
+    except Exception as exc:
+        print("Reservations API startup failed:", repr(exc), file=sys.stderr, flush=True)
+        traceback.print_exc()
+        logger.exception("Reservations API startup failed.")
+        raise
 
 
 @app.exception_handler(AppException)
