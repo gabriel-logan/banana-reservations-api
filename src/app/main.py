@@ -27,11 +27,45 @@ logging.basicConfig(
 
 app = FastAPI(title="Banana Reservations API")
 logger = logging.getLogger(__name__)
-allowed_domains = [
-    domain.strip()
-    for domain in settings.allowed_domains.split(",")
-    if domain.strip()
-]
+allowed_domains = []
+
+
+def expand_allowed_domains(raw_allowed_domains: str) -> list[str]:
+    expanded_domains: list[str] = []
+
+    for domain in raw_allowed_domains.split(","):
+        normalized_domain = domain.strip()
+
+        if not normalized_domain:
+            continue
+
+        if normalized_domain not in expanded_domains:
+            expanded_domains.append(normalized_domain)
+
+        try:
+            from urllib.parse import urlparse
+
+            parsed_domain = urlparse(normalized_domain)
+        except ValueError:
+            continue
+
+        if parsed_domain.hostname not in {"localhost", "127.0.0.1", "::1"}:
+            continue
+
+        port = f":{parsed_domain.port}" if parsed_domain.port else ""
+
+        for alias in (
+            f"{parsed_domain.scheme}://localhost{port}",
+            f"{parsed_domain.scheme}://127.0.0.1{port}",
+            f"{parsed_domain.scheme}://[::1]{port}",
+        ):
+            if alias not in expanded_domains:
+                expanded_domains.append(alias)
+
+    return expanded_domains
+
+
+allowed_domains = expand_allowed_domains(settings.allowed_domains)
 
 if settings.allowed_domains.strip() == "*" or not allowed_domains:
     app.add_middleware(
