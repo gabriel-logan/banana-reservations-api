@@ -15,7 +15,7 @@ Reservations microservice for Banana Meeting Rooms.
 - **FastAPI** because the challenge allows Python frameworks and FastAPI gives a very good balance between speed of implementation, readability and built-in validation. I chose it over Flask because Flask would require more manual structuring for request validation and API contracts, and over Django because Django would be heavier than necessary for a focused microservice.
 - **SQLAlchemy** because the project needs a relational ORM with explicit models and predictable queries. I chose it over smaller ORMs because SQLAlchemy is more established, flexible and easier to scale in complexity if business rules around reservations grow. It also keeps the repository layer explicit instead of hiding too much behind framework conventions.
 - **Alembic** because schema evolution needs to be versioned and repeatable. I chose it over relying only on automatic table creation because migrations document database changes clearly and make the service more reliable to run in different environments.
-- **PostgreSQL** because reservation data has relational constraints and conflict rules that fit well in a relational database. I chose it over SQLite because this project benefits from a database engine closer to real-world concurrency and deployment scenarios, while still being lightweight enough for local Docker usage.
+- **PostgreSQL** because reservation scheduling is the part of the system with the most relational and transactional sensitivity. I chose it over MySQL because PostgreSQL gives me a stronger default for consistency, expressive SQL queries and predictable handling of time-based business rules, which matters when validating reservation conflicts and related entities such as branches and rooms. It also runs very well in Docker and keeps both microservices aligned on the same database technology.
 - **Shared JWT secret validation** because this microservice only needs to verify tokens issued by the auth service, not manage user credentials directly. I chose this approach over calling the auth API on every request because local JWT validation keeps the reservations service independent, faster and better aligned with the proposed microservice architecture.
 
 ## Requirements
@@ -26,6 +26,10 @@ Reservations microservice for Banana Meeting Rooms.
 ## Environment Variables
 
 Copy `.env.example` to `.env` and adjust only if needed.
+
+```bash
+cp .env.example .env
+```
 
 | Variable | Description |
 |---|---|
@@ -70,6 +74,15 @@ This service receives all business requests related to branches, rooms and reser
 Once the user is identified, the API executes the requested operation in its own PostgreSQL database. Listing routes return branches, rooms or reservations, and reservation queries are scoped by authenticated user where applicable. Create and update operations also validate business rules such as branch existence, room existence, room-to-branch consistency and time range validity.
 
 The most important rule in this service is conflict detection. Before creating or updating a reservation, the API checks whether another reservation already exists for the same room in an overlapping time interval. If so, the request is rejected with a conflict response. This keeps the final scheduling guarantee in the backend even if the frontend already filtered available options earlier.
+
+## Future Improvements
+
+These are small improvements that would be useful in a next iteration, but would increase complexity beyond the current challenge scope:
+
+- Add pagination and optional filtering on reservation listing endpoints to keep the API more scalable as data grows.
+- Add automated tests focused on reservation conflict scenarios, JWT validation failures and bulk deletion edge cases.
+- Expose lightweight audit information, such as reservation creator and last update metadata, to improve traceability.
+- Add request correlation IDs and more structured logs to simplify debugging across frontend and backend calls.
 
 ## Routes
 
