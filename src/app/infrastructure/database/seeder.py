@@ -9,6 +9,9 @@ from app.modules.rooms.entity import Room
 
 logger = logging.getLogger(__name__)
 
+ANA_SILVA_USER_ID = "11111111-1111-1111-1111-111111111111"
+BRUNO_COSTA_USER_ID = "22222222-2222-2222-2222-222222222222"
+
 
 def seed_initial_data(db: Session) -> None:
     if db.query(Branch.id).count() > 0:
@@ -49,6 +52,7 @@ def seed_initial_data(db: Session) -> None:
 
     reservations = [
         Reservation(
+            user_id=ANA_SILVA_USER_ID,
             room_id=rooms[0].id,
             start_time=tomorrow,
             end_time=tomorrow + timedelta(hours=1),
@@ -58,6 +62,7 @@ def seed_initial_data(db: Session) -> None:
             description="Weekly leadership sync",
         ),
         Reservation(
+            user_id=BRUNO_COSTA_USER_ID,
             room_id=rooms[1].id,
             start_time=tomorrow + timedelta(hours=2),
             end_time=tomorrow + timedelta(hours=3),
@@ -67,6 +72,7 @@ def seed_initial_data(db: Session) -> None:
             description="Product roadmap review",
         ),
         Reservation(
+            user_id=ANA_SILVA_USER_ID,
             room_id=rooms[2].id,
             start_time=tomorrow + timedelta(hours=1),
             end_time=tomorrow + timedelta(hours=2, minutes=30),
@@ -76,6 +82,7 @@ def seed_initial_data(db: Session) -> None:
             description="Client discovery workshop",
         ),
         Reservation(
+            user_id=BRUNO_COSTA_USER_ID,
             room_id=rooms[4].id,
             start_time=tomorrow + timedelta(days=1, hours=1),
             end_time=tomorrow + timedelta(days=1, hours=2),
@@ -85,6 +92,7 @@ def seed_initial_data(db: Session) -> None:
             description="Hiring panel",
         ),
         Reservation(
+            user_id=ANA_SILVA_USER_ID,
             room_id=rooms[6].id,
             start_time=tomorrow + timedelta(hours=1),
             end_time=tomorrow + timedelta(hours=2),

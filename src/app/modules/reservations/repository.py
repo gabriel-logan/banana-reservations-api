@@ -10,23 +10,28 @@ class ReservationRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_all(self, room_id: int | None = None) -> list[Reservation]:
+    def get_all(self, user_id: str, room_id: int | None = None) -> list[Reservation]:
         query = self.db.query(Reservation).join(Room).join(Branch)
+        query = query.filter(Reservation.user_id == user_id)
         if room_id is not None:
             query = query.filter(Reservation.room_id == room_id)
         return query.order_by(Reservation.start_time.asc()).all()
 
-    def get_by_id(self, reservation_id: int) -> Reservation | None:
+    def get_by_id(self, reservation_id: int, user_id: str) -> Reservation | None:
         return (
             self.db.query(Reservation)
             .join(Room)
             .join(Branch)
-            .filter(Reservation.id == reservation_id)
+            .filter(
+                Reservation.id == reservation_id,
+                Reservation.user_id == user_id,
+            )
             .first()
         )
 
-    def create(self, data: ReservationCreate) -> Reservation:
+    def create(self, user_id: str, data: ReservationCreate) -> Reservation:
         reservation = Reservation(
+            user_id=user_id,
             room_id=data.room_id,
             start_time=data.start_time,
             end_time=data.end_time,
@@ -37,7 +42,7 @@ class ReservationRepository:
         )
         self.db.add(reservation)
         self.db.commit()
-        return self.get_by_id(reservation.id)
+        return self.get_by_id(reservation.id, user_id)
 
     def update(self, reservation: Reservation, data: ReservationUpdate) -> Reservation:
         reservation.room_id = data.room_id
@@ -48,18 +53,28 @@ class ReservationRepository:
         reservation.people_quantity = data.people_quantity
         reservation.description = data.description
         self.db.commit()
-        return self.get_by_id(reservation.id)
+        return self.get_by_id(reservation.id, reservation.user_id)
 
-    def delete(self, reservation_id: int) -> None:
-        reservation = self.db.query(Reservation).filter(Reservation.id == reservation_id).first()
+    def delete(self, reservation_id: int, user_id: str) -> None:
+        reservation = (
+            self.db.query(Reservation)
+            .filter(
+                Reservation.id == reservation_id,
+                Reservation.user_id == user_id,
+            )
+            .first()
+        )
         if reservation is not None:
             self.db.delete(reservation)
             self.db.commit()
 
-    def get_by_ids(self, reservation_ids: list[int]) -> list[Reservation]:
+    def get_by_ids(self, user_id: str, reservation_ids: list[int]) -> list[Reservation]:
         return (
             self.db.query(Reservation)
-            .filter(Reservation.id.in_(reservation_ids))
+            .filter(
+                Reservation.user_id == user_id,
+                Reservation.id.in_(reservation_ids),
+            )
             .all()
         )
 

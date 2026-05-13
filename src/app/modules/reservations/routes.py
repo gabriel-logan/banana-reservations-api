@@ -29,27 +29,27 @@ def get_reservation_service(db: Session = Depends(get_db)) -> ReservationService
 def list_reservations(
     room_id: int | None = None,
     service: ReservationService = Depends(get_reservation_service),
-    _=Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
-    return service.list_reservations(room_id)
+    return service.list_reservations(current_user["id"], room_id)
 
 
 @router.post("", response_model=ReservationResponse, response_model_by_alias=True, status_code=201)
 def create_reservation(
     data: ReservationCreate,
     service: ReservationService = Depends(get_reservation_service),
-    _=Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
-    return service.create_reservation(data)
+    return service.create_reservation(current_user["id"], data)
 
 
 @router.post("/bulk-delete", status_code=204)
 def bulk_delete_reservations(
     data: ReservationBulkDeleteRequest,
     service: ReservationService = Depends(get_reservation_service),
-    _=Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
-    service.delete_reservations(data)
+    service.delete_reservations(current_user["id"], data)
     return Response(status_code=204)
 
 
@@ -57,9 +57,9 @@ def bulk_delete_reservations(
 def get_reservation(
     reservation_id: int,
     service: ReservationService = Depends(get_reservation_service),
-    _=Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
-    return service.get_reservation(reservation_id)
+    return service.get_reservation(current_user["id"], reservation_id)
 
 
 @router.put("/{reservation_id}", response_model=ReservationResponse, response_model_by_alias=True)
@@ -67,16 +67,16 @@ def update_reservation(
     reservation_id: int,
     data: ReservationUpdate,
     service: ReservationService = Depends(get_reservation_service),
-    _=Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
-    return service.update_reservation(reservation_id, data)
+    return service.update_reservation(current_user["id"], reservation_id, data)
 
 
 @router.delete("/{reservation_id}", status_code=204)
 def delete_reservation(
     reservation_id: int,
     service: ReservationService = Depends(get_reservation_service),
-    _=Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
-    service.delete_reservation(reservation_id)
+    service.delete_reservation(current_user["id"], reservation_id)
     return Response(status_code=204)

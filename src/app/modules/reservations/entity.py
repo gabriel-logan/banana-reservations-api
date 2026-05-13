@@ -7,6 +7,7 @@ class Reservation(Base):
     __tablename__ = "reservations"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String(36), nullable=False, index=True)
     room_id = Column(Integer, ForeignKey("rooms.id"), nullable=False)
     start_time = Column(DateTime, nullable=False)
     end_time = Column(DateTime, nullable=False)

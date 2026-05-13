@@ -26,26 +26,28 @@ class ReservationService:
         self.room_repo = room_repo
         self.branch_repo = branch_repo
 
-    def list_reservations(self, room_id: int | None = None) -> list[ReservationResponse]:
-        reservations = self.repo.get_all(room_id)
+    def list_reservations(self, user_id: str, room_id: int | None = None) -> list[ReservationResponse]:
+        reservations = self.repo.get_all(user_id, room_id)
         logger.info(
-            "Listed reservations with room_id=%s. count=%s",
+            "Listed reservations for user_id=%s with room_id=%s. count=%s",
+            user_id,
             room_id,
             len(reservations),
         )
         return [self._to_response(reservation) for reservation in reservations]
 
-    def get_reservation(self, reservation_id: int) -> ReservationResponse:
-        logger.debug("Fetching reservation id=%s", reservation_id)
-        reservation = self.repo.get_by_id(reservation_id)
+    def get_reservation(self, user_id: str, reservation_id: int) -> ReservationResponse:
+        logger.debug("Fetching reservation id=%s for user_id=%s", reservation_id, user_id)
+        reservation = self.repo.get_by_id(reservation_id, user_id)
         if reservation is None:
-            logger.warning("Reservation id=%s not found.", reservation_id)
+            logger.warning("Reservation id=%s not found for user_id=%s.", reservation_id, user_id)
             raise NotFoundException("Reservation not found.")
         return self._to_response(reservation)
 
-    def create_reservation(self, data: ReservationCreate) -> ReservationResponse:
+    def create_reservation(self, user_id: str, data: ReservationCreate) -> ReservationResponse:
         logger.info(
-            "Creating reservation with branch_id=%s room_id=%s start=%s end=%s coffee=%s people_quantity=%s",
+            "Creating reservation for user_id=%s with branch_id=%s room_id=%s start=%s end=%s coffee=%s people_quantity=%s",
+            user_id,
             data.branch_id,
             data.room_id,
             data.start_time.isoformat(),
@@ -64,14 +66,15 @@ class ReservationService:
             raise ConflictException(
                 "There is already a reservation for this room in the selected time range."
             )
-        reservation = self.repo.create(data)
+        reservation = self.repo.create(user_id, data)
         logger.info("Reservation created successfully. id=%s", reservation.id)
         return self._to_response(reservation)
 
-    def update_reservation(self, reservation_id: int, data: ReservationUpdate) -> ReservationResponse:
+    def update_reservation(self, user_id: str, reservation_id: int, data: ReservationUpdate) -> ReservationResponse:
         logger.info(
-            "Updating reservation id=%s with branch_id=%s room_id=%s start=%s end=%s coffee=%s people_quantity=%s",
+            "Updating reservation id=%s for user_id=%s with branch_id=%s room_id=%s start=%s end=%s coffee=%s people_quantity=%s",
             reservation_id,
+            user_id,
             data.branch_id,
             data.room_id,
             data.start_time.isoformat(),
@@ -79,9 +82,9 @@ class ReservationService:
             data.coffee,
             data.people_quantity,
         )
-        reservation = self.repo.get_by_id(reservation_id)
+        reservation = self.repo.get_by_id(reservation_id, user_id)
         if reservation is None:
-            logger.warning("Reservation id=%s not found for update.", reservation_id)
+            logger.warning("Reservation id=%s not found for update by user_id=%s.", reservation_id, user_id)
             raise NotFoundException("Reservation not found.")
 
         room = self._validate_room_and_branch(data.branch_id, data.room_id)
@@ -106,21 +109,22 @@ class ReservationService:
         logger.info("Reservation updated successfully. id=%s", updated_reservation.id)
         return self._to_response(updated_reservation)
 
-    def delete_reservation(self, reservation_id: int) -> None:
-        logger.info("Deleting reservation id=%s", reservation_id)
-        reservation = self.repo.get_by_id(reservation_id)
+    def delete_reservation(self, user_id: str, reservation_id: int) -> None:
+        logger.info("Deleting reservation id=%s for user_id=%s", reservation_id, user_id)
+        reservation = self.repo.get_by_id(reservation_id, user_id)
         if reservation is None:
-            logger.warning("Reservation id=%s not found for delete.", reservation_id)
+            logger.warning("Reservation id=%s not found for delete by user_id=%s.", reservation_id, user_id)
             raise NotFoundException("Reservation not found.")
-        self.repo.delete(reservation_id)
+        self.repo.delete(reservation_id, user_id)
 
-    def delete_reservations(self, data: ReservationBulkDeleteRequest) -> None:
-        logger.info("Bulk deleting reservations ids=%s", data.reservation_ids)
-        reservations = self.repo.get_by_ids(data.reservation_ids)
+    def delete_reservations(self, user_id: str, data: ReservationBulkDeleteRequest) -> None:
+        logger.info("Bulk deleting reservations for user_id=%s ids=%s", user_id, data.reservation_ids)
+        reservations = self.repo.get_by_ids(user_id, data.reservation_ids)
 
         if len(reservations) != len(data.reservation_ids):
             logger.warning(
-                "Bulk delete failed because some reservations were not found. requested_ids=%s found=%s",
+                "Bulk delete failed for user_id=%s because some reservations were not found. requested_ids=%s found=%s",
+                user_id,
                 data.reservation_ids,
                 len(reservations),
             )
