@@ -6,6 +6,7 @@ from app.infrastructure.security.jwt_auth import get_current_user
 from app.modules.branches.repository import BranchRepository
 from app.modules.reservations.repository import ReservationRepository
 from app.modules.reservations.schemas import (
+    ReservationBulkDeleteRequest,
     ReservationCreate,
     ReservationResponse,
     ReservationUpdate,
@@ -68,4 +69,14 @@ def delete_reservation(
     _=Depends(get_current_user),
 ):
     service.delete_reservation(reservation_id)
+    return Response(status_code=204)
+
+
+@router.post("/bulk-delete", status_code=204)
+def bulk_delete_reservations(
+    data: ReservationBulkDeleteRequest,
+    service: ReservationService = Depends(get_reservation_service),
+    _=Depends(get_current_user),
+):
+    service.delete_reservations(data)
     return Response(status_code=204)

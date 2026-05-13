@@ -44,6 +44,22 @@ class ReservationUpdate(ReservationBase):
     pass
 
 
+class ReservationBulkDeleteRequest(BaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    reservation_ids: list[int] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_reservation_ids(self):
+        unique_ids = list(dict.fromkeys(self.reservation_ids))
+
+        if any(reservation_id <= 0 for reservation_id in unique_ids):
+            raise ValueError("Reservation ids must be greater than zero.")
+
+        self.reservation_ids = unique_ids
+        return self
+
+
 class ReservationResponse(ReservationBase):
     id: int
     branch_name: str

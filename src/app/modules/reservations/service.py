@@ -3,6 +3,7 @@ from app.common.exceptions import ConflictException, NotFoundException
 from app.modules.branches.repository import BranchRepository
 from app.modules.reservations.repository import ReservationRepository
 from app.modules.reservations.schemas import (
+    ReservationBulkDeleteRequest,
     ReservationCreate,
     ReservationResponse,
     ReservationUpdate,
@@ -63,6 +64,14 @@ class ReservationService:
         if reservation is None:
             raise NotFoundException("Reservation not found.")
         self.repo.delete(reservation_id)
+
+    def delete_reservations(self, data: ReservationBulkDeleteRequest) -> None:
+        reservations = self.repo.get_by_ids(data.reservation_ids)
+
+        if len(reservations) != len(data.reservation_ids):
+            raise NotFoundException("One or more reservations were not found.")
+
+        self.repo.delete_many(reservations)
 
     def _validate_room_and_branch(self, branch_id: int, room_id: int):
         branch = self.branch_repo.get_by_id(branch_id)

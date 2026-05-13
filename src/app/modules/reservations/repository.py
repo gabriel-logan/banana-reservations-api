@@ -56,6 +56,18 @@ class ReservationRepository:
             self.db.delete(reservation)
             self.db.commit()
 
+    def get_by_ids(self, reservation_ids: list[int]) -> list[Reservation]:
+        return (
+            self.db.query(Reservation)
+            .filter(Reservation.id.in_(reservation_ids))
+            .all()
+        )
+
+    def delete_many(self, reservations: list[Reservation]) -> None:
+        for reservation in reservations:
+            self.db.delete(reservation)
+        self.db.commit()
+
     def has_conflict(
         self,
         room_id: int,
