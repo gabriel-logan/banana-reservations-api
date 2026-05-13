@@ -34,15 +34,6 @@ def list_reservations(
     return service.list_reservations(room_id)
 
 
-@router.get("/{reservation_id}", response_model=ReservationResponse, response_model_by_alias=True)
-def get_reservation(
-    reservation_id: int,
-    service: ReservationService = Depends(get_reservation_service),
-    _=Depends(get_current_user),
-):
-    return service.get_reservation(reservation_id)
-
-
 @router.post("", response_model=ReservationResponse, response_model_by_alias=True, status_code=201)
 def create_reservation(
     data: ReservationCreate,
@@ -50,6 +41,25 @@ def create_reservation(
     _=Depends(get_current_user),
 ):
     return service.create_reservation(data)
+
+
+@router.post("/bulk-delete", status_code=204)
+def bulk_delete_reservations(
+    data: ReservationBulkDeleteRequest,
+    service: ReservationService = Depends(get_reservation_service),
+    _=Depends(get_current_user),
+):
+    service.delete_reservations(data)
+    return Response(status_code=204)
+
+
+@router.get("/{reservation_id}", response_model=ReservationResponse, response_model_by_alias=True)
+def get_reservation(
+    reservation_id: int,
+    service: ReservationService = Depends(get_reservation_service),
+    _=Depends(get_current_user),
+):
+    return service.get_reservation(reservation_id)
 
 
 @router.put("/{reservation_id}", response_model=ReservationResponse, response_model_by_alias=True)
@@ -69,14 +79,4 @@ def delete_reservation(
     _=Depends(get_current_user),
 ):
     service.delete_reservation(reservation_id)
-    return Response(status_code=204)
-
-
-@router.post("/bulk-delete", status_code=204)
-def bulk_delete_reservations(
-    data: ReservationBulkDeleteRequest,
-    service: ReservationService = Depends(get_reservation_service),
-    _=Depends(get_current_user),
-):
-    service.delete_reservations(data)
     return Response(status_code=204)
