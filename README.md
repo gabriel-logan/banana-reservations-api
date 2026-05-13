@@ -34,7 +34,9 @@ Copy `.env.example` to `.env` and adjust only if needed.
 | `ALLOWED_DOMAINS` | Allowed frontend origins separated by comma, or `*` in development |
 | `LOG_LEVEL` | Logger level for the API, for example `DEBUG` or `INFO` |
 
-Generate a strong shared secret with:
+You can keep the shared example value from `.env.example` for quick local testing.
+
+Optional (recommended): generate a stronger shared secret with:
 
 ```bash
 openssl rand -base64 32
